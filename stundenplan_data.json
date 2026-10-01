@@ -90,6 +90,14 @@
             "Kapazitaet": 30,
             "Ist_Fachraum": false,
             "Faecher": []
+        },
+        {
+            "Name": "0.54",
+            "Stockwerk": 0,
+            "Gang": 5,
+            "Kapazitaet": 30,
+            "Ist_Fachraum": false,
+            "Faecher": []
         }
     ],
     "Lehrer": [],
