@@ -31,7 +31,7 @@ STUNDENPLAN = daten.get("Stundenplan", [])
 # Dynamische Klassen- und Lehrerlisten aus dem Master-Plan ermitteln
 ALLE_KLASSEN = sorted(list(set(e["Klasse"] for e in STUNDENPLAN)))
 if not ALLE_KLASSEN:
-  ALLE_KLASSEN = ["11A", "11B"]  # Fallback falls noch kein Plan da ist
+  ALLE_KLASSEN = ["11A", "11B", "12A", "13A"]  # Fallback
 
 ALLE_LEHRER = sorted(list(set(e["Lehrer"] for e in STUNDENPLAN)))
 if not ALLE_LEHRER:
@@ -90,7 +90,7 @@ else:
 
 ganztaegig = st.sidebar.checkbox("Ganztägig", value=True)
 
-if ganztaegig:
+if ganztagig:
   start_std, end_std = 1, 6
 else:
   col_from, col_to = st.sidebar.columns(2)
@@ -160,26 +160,39 @@ for tag in TAGE:
       )
 
       if ist_krank:
-        belegte_lehrer_in_stunde = [
-            s["Lehrer"] for s in STUNDENPLAN if s["Tag"] == tag and s["Stunde"] == std
-        ]
+        # Logik-Unterscheidung nach Klassenstufe
+        # Prüfen, ob die Klasse zur Stufe 12 oder 13 gehört (z.B. beginnt mit "12" oder "13")
+        is_stufe_12_13 = klasse.startswith("12") or klasse.startswith("13")
+        is_stufe_11 = klasse.startswith("11")
 
-        verfuegbare_vertreter = [
-            l
-            for l in ALLE_LEHRER
-            if (l not in belegte_lehrer_in_stunde) and (l not in kranke_lehrer)
-        ]
-
-        if verfuegbare_vertreter:
-          vertretungs_lehrer = verfuegbare_vertreter[0]
+        if is_stufe_12_13:
           lehrer_text = (
-              f"<span class='new-green'>{vertretungs_lehrer}"
-              " (Vertretung)</span>"
+              "<span class='text-red'>Entfall (Klasse 12/13)</span>"
           )
+        elif is_stufe_11:
+          lehrer_text = "<span class='new-blue'>Plus (Eigenstudium)</span>"
         else:
-          lehrer_text = (
-              "<span class='text-red'>Kein Lehrer frei (Entfall)</span>"
-          )
+          # Standard-Verhalten für andere Klassen (falls vorhanden)
+          belegte_lehrer_in_stunde = [
+              s["Lehrer"]
+              for s in STUNDENPLAN
+              if s["Tag"] == tag and s["Stunde"] == std
+          ]
+          verfuegbare_vertreter = [
+              l
+              for l in ALLE_LEHRER
+              if (l not in belegte_lehrer_in_stunde) and (l not in kranke_lehrer)
+          ]
+          if verfuegbare_vertreter:
+            vertretungs_lehrer = verfuegbare_vertreter[0]
+            lehrer_text = (
+                f"<span class='new-green'>{vertretungs_lehrer}"
+                " (Vertretung)</span>"
+            )
+          else:
+            lehrer_text = (
+                "<span class='text-red'>Kein Lehrer frei (Entfall)</span>"
+            )
 
         stammraum = STAMMRÄUME.get(klasse, "R101")
         if ist_fachraum:
@@ -251,6 +264,7 @@ st.markdown(
     .strike-red { color: #ff6b6b; text-decoration: line-through; font-weight: bold; }
     .text-red { color: #ff6b6b; font-weight: bold; }
     .new-green { color: #51cf66; font-weight: bold; }
+    .new-blue { color: #339af0; font-weight: bold; }
 </style>
 """,
     unsafe_allow_html=True,
