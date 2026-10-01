@@ -144,6 +144,10 @@
             {
                 "Fach": "Mathe",
                 "Stunden": 5
+            },
+            {
+                "Fach": "Deutsch",
+                "Stunden": 3
             }
         ]
     },
