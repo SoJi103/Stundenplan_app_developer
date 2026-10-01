@@ -15,6 +15,11 @@
             "Name": "10B",
             "Jahrgang": 10,
             "Schuelerzahl": 26
+        },
+        {
+            "Name": "10C",
+            "Jahrgang": 10,
+            "Schuelerzahl": 26
         }
     ],
     "Faecher_Katalog": [
