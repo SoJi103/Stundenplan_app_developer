@@ -74,7 +74,16 @@
             "JgstBis": 13
         }
     ],
-    "Raeume": [],
+    "Raeume": [
+        {
+            "Name": "0.30",
+            "Stockwerk": 0,
+            "Gang": 3,
+            "Kapazitaet": 30,
+            "Ist_Fachraum": false,
+            "Faecher": []
+        }
+    ],
     "Lehrer": [],
     "Kopplungen": [],
     "Struktur": {},
