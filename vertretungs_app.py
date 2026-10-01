@@ -1,39 +1,39 @@
 import datetime
 import json
+import os
 import pandas as pd
 import streamlit as st
 
 st.set_page_config(page_title="Schul-Vertretungsplan", layout="wide")
 
-# ==========================================
-# 1. DATENBASIS (Live von GitHub / stundenplan_data.json)
-# ==========================================
+DATEI_PFAD = "stundenplan_data.json"
 
+
+# ==========================================
+# 1. DATENBASIS (aus Master-Datei geladen)
+# ==========================================
+def lade_daten():
+  if os.path.exists(DATEI_PFAD):
+    with open(DATEI_PFAD, "r", encoding="utf-8") as f:
+      return json.load(f)
+  return {"Stundenplan": [], "Stammraeume": {}, "Lehrer": [], "Klassen": []}
+
+
+daten = lade_daten()
+
+STAMMRÄUME = daten.get("Stammraeume", {})
 TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"]
 STUNDEN = list(range(1, 7))
 
+# Echter Stundenplan aus dem Editor
+STUNDENPLAN = daten.get("Stundenplan", [])
 
-# Funktion zum Laden aller Daten (Stundenplan & Stammräume) aus der GitHub-JSON
-def lade_daten():
-    try:
-        with open("stundenplan_data.json", "r", encoding="utf-8") as f:
-            inhalt = json.load(f)
-            # Holt den Stundenplan und die Stammräume (falls im Editor definiert, sonst Fallback)
-            plan = inhalt.get("Stundenplan", [])
-            raeume = inhalt.get(
-                "Stammraeume", {"11A": "R101", "11B": "R102", "11C": "R103"}
-            )
-            return plan, raeume
-    except Exception as e:
-        st.error(f"Fehler beim Laden der stundenplan_data.json: {e}")
-        return [], {"11A": "R101", "11B": "R102", "11C": "R103"}
+# Dynamische Klassen- und Lehrerlisten ermitteln
+ALLE_KLASSEN = sorted(list(set(e["Klasse"] for e in STUNDENPLAN)))
+if not ALLE_KLASSEN:
+  ALLE_KLASSEN = ["11A", "11B"]  # Fallback
 
-
-# Daten live laden
-STUNDENPLAN, STAMMRÄUME = lade_daten()
-
-ALLE_LEHRER = sorted(list(set(e["Lehrer"] for e in STUNDENPLAN if "Lehrer" in e)))
-
+ALLE_LEHRER = sorted(list(set(e["Lehrer"] for e in STUNDENPLAN)))
 
 # ==========================================
 # 2. SEITENLEISTE
@@ -46,16 +46,18 @@ ansicht_modus = st.sidebar.radio(
 )
 
 if ansicht_modus == "Klassenansicht":
-    ausgewaehlte_klasse = st.sidebar.selectbox(
-        "Klasse auswählen:", ["11A", "11B", "11C"], index=0
-    )
+  ausgewaehlte_klasse = st.sidebar.selectbox(
+      "Klasse auswählen:", ALLE_KLASSEN, index=0
+  )
 else:
-    ausgewaehlte_klasse = "Gesamtansicht"
+  ausgewaehlte_klasse = "Gesamtansicht"
 
 st.sidebar.subheader("Abwesenheit")
 
 kranke_lehrer = st.sidebar.multiselect(
-    "Abwesende(r) Lehrer:", options=ALLE_LEHRER, default=["FIS"]
+    "Abwesende(r) Lehrer:",
+    options=ALLE_LEHRER,
+    default=[ALLE_LEHRER[0]] if ALLE_LEHRER else [],
 )
 
 st.sidebar.write("Zeitraum / Tage auswählen:")
@@ -68,43 +70,49 @@ datums_bereich = st.sidebar.date_input(
 
 betroffene_tage = []
 if isinstance(datums_bereich, tuple) and len(datums_bereich) == 2:
-    start_d, end_d = datums_bereich
-    cur = start_d
-    wochenschluessel = {
-        0: "Montag",
-        1: "Dienstag",
-        2: "Mittwoch",
-        3: "Donnerstag",
-        4: "Freitag",
-    }
-    while cur <= end_d:
-        if cur.weekday() in wochenschluessel:
-            betroffene_tage.append(wochenschluessel[cur.weekday()])
-        cur += datetime.timedelta(days=1)
+  start_d, end_d = datums_bereich
+  cur = start_d
+  wochenschluessel = {
+      0: "Montag",
+      1: "Dienstag",
+      2: "Mittwoch",
+      3: "Donnerstag",
+      4: "Freitag",
+  }
+  while cur <= end_d:
+    if cur.weekday() in wochenschluessel:
+      betroffene_tage.append(wochenschluessel[cur.weekday()])
+    cur += datetime.timedelta(days=1)
 else:
-    betroffene_tage = TAGE
+  betroffene_tage = TAGE
 
 ganztaegig = st.sidebar.checkbox("Ganztägig", value=True)
 
-if ganztaegig:
-    start_std, end_std = 1, 6
+if ganztagig:
+  start_std, end_std = 1, 6
 else:
-    col_from, col_to = st.sidebar.columns(2)
-    with col_from:
-        start_std = st.number_input("Stunde von:", min_value=1, max_value=6, value=1)
-    with col_to:
-        end_std = st.number_input("Stunde bis:", min_value=1, max_value=6, value=6)
+  col_from, col_to = st.sidebar.columns(2)
+  with col_from:
+    start_std = st.number_input("Stunde von:", min_value=1, max_value=6, value=1)
+  with col_to:
+    end_std = st.number_input("Stunde bis:", min_value=1, max_value=6, value=6)
 
 # ==========================================
 # 3. TITEL
 # ==========================================
 
 if ansicht_modus == "Klassenansicht":
-    st.title(f"Vertretungsplan Klasse {ausgewaehlte_klasse}")
-    st.subheader(f"Wochenplan für Klasse {ausgewaehlte_klasse}")
+  st.title(f"Vertretungsplan Klasse {ausgewaehlte_klasse}")
+  st.subheader(f"Wochenplan für Klasse {ausgewaehlte_klasse}")
 else:
-    st.title("Vertretungsplan Gesamtansicht")
-    st.subheader("Übersicht aller Vertretungen & Raumverlegungen")
+  st.title("Vertretungsplan Gesamtansicht")
+  st.subheader("Übersicht aller Vertretungen & Raumverlegungen")
+
+if not STUNDENPLAN:
+  st.warning(
+      "⚠️ Noch kein Stundenplan vorhanden! Bitte erstelle und berechne zuerst"
+      " den Stundenplan in der Editor-App."
+  )
 
 # ==========================================
 # 4. TABELLEN-AUFBAU
@@ -113,86 +121,96 @@ else:
 grid = {tag: {std: "" for std in STUNDEN} for tag in TAGE}
 
 if ansicht_modus == "Klassenansicht":
-    gefilterter_plan = [e for e in STUNDENPLAN if e["Klasse"] == ausgewaehlte_klasse]
+  gefilterter_plan = [e for e in STUNDENPLAN if e["Klasse"] == ausgewaehlte_klasse]
 else:
-    gefilterter_plan = STUNDENPLAN
+  gefilterter_plan = STUNDENPLAN
 
 eintraege_nach_slot = {tag: {std: [] for std in STUNDEN} for tag in TAGE}
 for e in gefilterter_plan:
-    eintraege_nach_slot[e["Tag"]][e["Stunde"]].append(e)
+  eintraege_nach_slot[e["Tag"]][e["Stunde"]].append(e)
 
 for tag in TAGE:
-    for std in STUNDEN:
-        eintraege = eintraege_nach_slot[tag][std]
-        if not eintraege:
-            grid[tag][std] = ""
-            continue
+  for std in STUNDEN:
+    eintraege = eintraege_nach_slot[tag][std]
+    if not eintraege:
+      grid[tag][std] = ""
+      continue
 
-        html_blocks = []
-        for e in eintraege:
-            klasse = e["Klasse"]
-            fach = e["Fach"]
-            lehrer = e["Lehrer"]
-            raum = e["Raum"]
-            ist_fachraum = e.get("Ist_Fachraum", False)
+    html_blocks = []
+    for e in eintraege:
+      klasse = e["Klasse"]
+      fach = e["Fach"]
+      lehrer = e["Lehrer"]
+      raum = e["Raum"]
+      ist_fachraum = e.get("Ist_Fachraum", False)
 
-            ist_krank = (
-                (lehrer in kranke_lehrer)
-                and (tag in betroffene_tage)
-                and (start_std <= std <= end_std)
-            )
+      ist_krank = (
+          (lehrer in kranke_lehrer)
+          and (tag in betroffene_tage)
+          and (start_std <= std <= end_std)
+      )
 
-            # In der Gesamtansicht werden reguläre Stunden ohne Vertretung ignoriert
-            if ansicht_modus != "Klassenansicht" and not ist_krank:
-                continue
+      if ansicht_modus != "Klassenansicht" and not ist_krank:
+        continue
 
-            klassen_prefix = f"<b>[{klasse}]</b> " if ansicht_modus != "Klassenansicht" else ""
+      klassen_prefix = (
+          f"<b>[{klasse}]</b> " if ansicht_modus != "Klassenansicht" else ""
+      )
 
-            if ist_krank:
-                belegte_lehrer_in_stunde = [
-                    s["Lehrer"]
-                    for s in STUNDENPLAN
-                    if s["Tag"] == tag and s["Stunde"] == std
-                ]
+      if ist_krank:
+        belegte_lehrer_in_stunde = [
+            s["Lehrer"] for s in STUNDENPLAN if s["Tag"] == tag and s["Stunde"] == std
+        ]
 
-                verfuegbare_vertreter = [
-                    l
-                    for l in ALLE_LEHRER
-                    if (l not in belegte_lehrer_in_stunde) and (l not in kranke_lehrer)
-                ]
+        verfuegbare_vertreter = [
+            l
+            for l in ALLE_LEHRER
+            if (l not in belegte_lehrer_in_stunde) and (l not in kranke_lehrer)
+        ]
 
-                if verfuegbare_vertreter:
-                    vertretungs_lehrer = verfuegbare_vertreter[0]
-                    lehrer_text = f"<span class='new-green'>{vertretungs_lehrer} (Vertretung)</span>"
-                else:
-                    lehrer_text = "<span class='text-red'>Kein Lehrer frei (Entfall)</span>"
+        if verfuegbare_vertreter:
+          vertretungs_lehrer = verfuegbare_vertreter[0]
+          lehrer_text = (
+              f"<span class='new-green'>{vertretungs_lehrer}"
+              " (Vertretung)</span>"
+          )
+        else:
+          lehrer_text = (
+              "<span class='text-red'>Kein Lehrer frei (Entfall)</span>"
+          )
 
-                stammraum = STAMMRÄUME.get(klasse, "R101")
-                if ist_fachraum:
-                    raum_text = (
-                        f"<span class='strike-red'>{raum}</span><br>"
-                        f"<span class='new-green'>{stammraum}</span>"
-                    )
-                else:
-                    raum_text = f"<span class='room'>{raum}</span>"
+        stammraum = STAMMRÄUME.get(klasse, "R101")
+        if ist_fachraum:
+          raum_text = (
+              f"<span class='strike-red'>{raum}</span><br>"
+              f"<span class='new-green'>{stammraum}</span>"
+          )
+        else:
+          raum_text = f"<span class='room'>{raum}</span>"
 
-                block = (
-                    f'<div class="cell-content">'
-                    f"{klassen_prefix}<b>{fach}</b> <span class='strike-red'>{lehrer}</span><br>"
-                    f"{lehrer_text}<br>"
-                    f"{raum_text}"
-                    f"</div>"
-                )
-            else:
-                block = (
-                    f'<div class="cell-content">'
-                    f"{klassen_prefix}<b>{fach}</b> &nbsp; <span class='teacher'>{lehrer}</span><br>"
-                    f"<span class='room'>{raum}</span>"
-                    f"</div>"
-                )
-            html_blocks.append(block)
+        block = (
+            f'<div class="cell-content">'
+            f"{klassen_prefix}<b>{fach}</b> <span"
+            f" class='strike-red'>{lehrer}</span><br>"
+            f"{lehrer_text}<br>"
+            f"{raum_text}"
+            f"</div>"
+        )
+      else:
+        block = (
+            f'<div class="cell-content">'
+            f"{klassen_prefix}<b>{fach}</b> &nbsp; <span"
+            f" class='teacher'>{lehrer}</span><br>"
+            f"<span class='room'>{raum}</span>"
+            f"</div>"
+        )
+      html_blocks.append(block)
 
-        grid[tag][std] = "<hr style='margin: 4px 0; border: 0.5px solid #444;'>" .join(html_blocks)
+    grid[tag][std] = (
+        "<hr style='margin: 4px 0; border: 0.5px solid #444;'>".join(
+            html_blocks
+        )
+    )
 
 df_grid = pd.DataFrame(grid)
 df_grid.index.name = "Stunde"
