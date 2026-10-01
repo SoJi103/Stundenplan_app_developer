@@ -88,7 +88,7 @@ if isinstance(datums_bereich, tuple) and len(datums_bereich) == 2:
 else:
   betroffene_tage = TAGE
 
-ganztaegig = st.sidebar.checkbox("Ganztägig", value=True)
+ganztagig = st.sidebar.checkbox("Ganztägig", value=True)
 
 if ganztagig:
   start_std, end_std = 1, 6
@@ -160,8 +160,6 @@ for tag in TAGE:
       )
 
       if ist_krank:
-        # Logik-Unterscheidung nach Klassenstufe
-        # Prüfen, ob die Klasse zur Stufe 12 oder 13 gehört (z.B. beginnt mit "12" oder "13")
         is_stufe_12_13 = klasse.startswith("12") or klasse.startswith("13")
         is_stufe_11 = klasse.startswith("11")
 
@@ -172,7 +170,6 @@ for tag in TAGE:
         elif is_stufe_11:
           lehrer_text = "<span class='new-blue'>Plus (Eigenstudium)</span>"
         else:
-          # Standard-Verhalten für andere Klassen (falls vorhanden)
           belegte_lehrer_in_stunde = [
               s["Lehrer"]
               for s in STUNDENPLAN
