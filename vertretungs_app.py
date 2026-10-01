@@ -10,7 +10,7 @@ DATEI_PFAD = "stundenplan_data.json"
 
 
 # ==========================================
-# 1. DATENBASIS (aus Master-Datei geladen)
+# 1. DATENBASIS (Holt sich alles vom Master-Plan)
 # ==========================================
 def lade_daten():
   if os.path.exists(DATEI_PFAD):
@@ -25,15 +25,17 @@ STAMMRÄUME = daten.get("Stammraeume", {})
 TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"]
 STUNDEN = list(range(1, 7))
 
-# Echter Stundenplan aus dem Editor
+# Echter Stundenplan direkt aus der gemeinsamen JSON-Datei
 STUNDENPLAN = daten.get("Stundenplan", [])
 
-# Dynamische Klassen- und Lehrerlisten ermitteln
+# Dynamische Klassen- und Lehrerlisten aus dem Master-Plan ermitteln
 ALLE_KLASSEN = sorted(list(set(e["Klasse"] for e in STUNDENPLAN)))
 if not ALLE_KLASSEN:
-  ALLE_KLASSEN = ["11A", "11B"]  # Fallback
+  ALLE_KLASSEN = ["11A", "11B"]  # Fallback falls noch kein Plan da ist
 
 ALLE_LEHRER = sorted(list(set(e["Lehrer"] for e in STUNDENPLAN)))
+if not ALLE_LEHRER:
+  ALLE_LEHRER = ["SCH", "MEY", "FIS"]  # Fallback
 
 # ==========================================
 # 2. SEITENLEISTE
@@ -88,7 +90,7 @@ else:
 
 ganztaegig = st.sidebar.checkbox("Ganztägig", value=True)
 
-if ganztagig:
+if ganztaegig:
   start_std, end_std = 1, 6
 else:
   col_from, col_to = st.sidebar.columns(2)
@@ -110,8 +112,8 @@ else:
 
 if not STUNDENPLAN:
   st.warning(
-      "⚠️ Noch kein Stundenplan vorhanden! Bitte erstelle und berechne zuerst"
-      " den Stundenplan in der Editor-App."
+      "⚠ Noch kein Stundenplan im Editor berechnet! Bitte erstelle zuerst"
+      " den Master-Plan."
   )
 
 # ==========================================
