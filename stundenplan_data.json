@@ -129,6 +129,13 @@
         }
     ],
     "Kopplungen": [],
-    "Struktur": {},
+    "Struktur": {
+        "10A": [
+            {
+                "Fach": "Mathe",
+                "Stunden": 3
+            }
+        ]
+    },
     "Vertretungsplan": []
 }
