@@ -113,6 +113,19 @@
             "Sperrstunden": [],
             "JgstVon": 5,
             "JgstBis": 13
+        },
+        {
+            "Kuerzel": "LIN",
+            "Name": "",
+            "Faecher": [
+                "Mathe"
+            ],
+            "MaxStunden": 24,
+            "Wunschtage": [],
+            "Sperrtage": [],
+            "Sperrstunden": [],
+            "JgstVon": 5,
+            "JgstBis": 13
         }
     ],
     "Kopplungen": [],
