@@ -3,6 +3,7 @@ import os
 import re
 import pandas as pd
 import streamlit as st
+from github import Github
 
 st.set_page_config(page_title="Stundenplan-Generator & Editor", layout="wide")
 
@@ -27,8 +28,33 @@ def analysiere_raumnummer(raum_str):
     return 0, 0
 
 # ==========================================
-# 1. DATENMANAGEMENT
+# 1. DATENMANAGEMENT & GITHUB-SYNC
 # ==========================================
+def speichere_daten(daten):
+    # 1. Lokal speichern
+    with open(DATEI_PFAD, "w", encoding="utf-8") as f:
+        json.dump(daten, f, ensure_ascii=False, indent=4)
+        
+    # 2. Direkt automatisch zu GitHub synchronisieren
+    try:
+        token = st.secrets["GITHUB_TOKEN"]
+        g = Github(token)
+        repo = g.get_repo("SoJi103/Stundenplan_app_developer")
+        
+        updated_content = json.dumps(daten, indent=4, ensure_ascii=False)
+        
+        file = repo.get_contents("stundenplan_data.json", ref="main")
+        repo.update_file(
+            file.path, 
+            "Auto-Update via Stundenplan-Editor", 
+            updated_content, 
+            file.sha, 
+            branch="main"
+        )
+        st.toast("✅ Erfolgreich zu GitHub synchronisiert!", icon="🚀")
+    except Exception as e:
+        st.warning(f"Lokal gespeichert, aber GitHub-Sync fehlgeschlagen: {e}")
+
 def lade_daten():
     if os.path.exists(DATEI_PFAD):
         with open(DATEI_PFAD, "r", encoding="utf-8") as f:
@@ -62,10 +88,6 @@ def lade_daten():
         "Struktur": {},
         "Stundenplan": [],
     }
-
-def speichere_daten(daten):
-    with open(DATEI_PFAD, "w", encoding="utf-8") as f:
-        json.dump(daten, f, ensure_ascii=False, indent=4)
 
 daten = lade_daten()
 TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"]
