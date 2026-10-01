@@ -100,7 +100,21 @@
             "Faecher": []
         }
     ],
-    "Lehrer": [],
+    "Lehrer": [
+        {
+            "Kuerzel": "MEY",
+            "Name": "",
+            "Faecher": [
+                "Deutsch"
+            ],
+            "MaxStunden": 24,
+            "Wunschtage": [],
+            "Sperrtage": [],
+            "Sperrstunden": [],
+            "JgstVon": 5,
+            "JgstBis": 13
+        }
+    ],
     "Kopplungen": [],
     "Struktur": {},
     "Vertretungsplan": []
