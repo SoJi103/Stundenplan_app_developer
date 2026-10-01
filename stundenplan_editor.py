@@ -423,32 +423,6 @@ with tab5:
 
         if erfolg:
             daten["Stundenplan"] = neuer_plan
-            from github import Github
-import json
-
-def speichere_daten(daten):
-    # 1. Lokal speichern (für den Moment in der Session)
-    with open(DATEI_PFAD, "w", encoding="utf-8") as f:
-        json.dump(daten, f, ensure_ascii=False, indent=4)
-        
-    # 2. Direkt automatisch zu GitHub synchronisieren
-    try:
-        token = st.secrets["GITHUB_TOKEN"]
-        g = Github(token)
-        repo = g.get_repo("SoJi103/Stundenplan_app_developer")
-        
-        updated_content = json.dumps(daten, indent=4, ensure_ascii=False)
-        
-        # Datei auf GitHub holen und aktualisieren
-        file = repo.get_contents("stundenplan_data.json", ref="main")
-        repo.update_file(
-            file.path, 
-            "Auto-Update via Stundenplan-Editor", 
-            updated_content, 
-            file.sha, 
-            branch="main"
-        )
-        st.toast("✅ Erfolgreich zu GitHub synchronisiert!", icon="🚀")
-    except Exception as e:
-        st.warning(f"Lokal gespeichert, aber GitHub-Sync fehlgeschlagen: {e}")
-
+            speichere_daten(daten)
+            st.success("🎉 Stundenplan erfolgreich berechnet und direkt zu GitHub synchronisiert!")
+            st.balloons()
