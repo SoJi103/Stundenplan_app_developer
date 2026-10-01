@@ -1,5 +1,134 @@
 {
-    "Stundenplan": [],
+    "Stundenplan": [
+        {
+            "Tag": "Montag",
+            "Stunde": 1,
+            "Klasse": "10A",
+            "Fach": "Mathe",
+            "Lehrer": "LIN",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 2,
+            "Klasse": "10A",
+            "Fach": "Mathe",
+            "Lehrer": "LIN",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 3,
+            "Klasse": "10A",
+            "Fach": "Mathe",
+            "Lehrer": "LIN",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 4,
+            "Klasse": "10A",
+            "Fach": "Deutsch",
+            "Lehrer": "MEY",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 5,
+            "Klasse": "10A",
+            "Fach": "Deutsch",
+            "Lehrer": "MEY",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 6,
+            "Klasse": "10A",
+            "Fach": "Deutsch",
+            "Lehrer": "MEY",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Dienstag",
+            "Stunde": 1,
+            "Klasse": "10A",
+            "Fach": "Deutsch",
+            "Lehrer": "MEY",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Dienstag",
+            "Stunde": 2,
+            "Klasse": "10A",
+            "Fach": "Deutsch",
+            "Lehrer": "MEY",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 4,
+            "Klasse": "10B",
+            "Fach": "Mathe",
+            "Lehrer": "LIN",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 5,
+            "Klasse": "10B",
+            "Fach": "Mathe",
+            "Lehrer": "LIN",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 6,
+            "Klasse": "10B",
+            "Fach": "Mathe",
+            "Lehrer": "LIN",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Dienstag",
+            "Stunde": 1,
+            "Klasse": "10B",
+            "Fach": "Mathe",
+            "Lehrer": "LIN",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Dienstag",
+            "Stunde": 2,
+            "Klasse": "10B",
+            "Fach": "Mathe",
+            "Lehrer": "LIN",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 1,
+            "Klasse": "10B",
+            "Fach": "Deutsch",
+            "Lehrer": "MEY",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 2,
+            "Klasse": "10B",
+            "Fach": "Deutsch",
+            "Lehrer": "MEY",
+            "Raum": "R101"
+        },
+        {
+            "Tag": "Montag",
+            "Stunde": 3,
+            "Klasse": "10B",
+            "Fach": "Deutsch",
+            "Lehrer": "MEY",
+            "Raum": "R101"
+        }
+    ],
     "Stammraeume": {
         "11A": "R101",
         "11B": "R102",
