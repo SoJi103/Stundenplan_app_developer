@@ -1,4 +1,66 @@
 {
     "Stundenplan": [],
-    "Stammraeume": {"11A": "R101", "11B": "R102", "11C": "R103"}
+    "Stammraeume": {
+        "11A": "R101",
+        "11B": "R102",
+        "11C": "R103"
+    },
+    "Klassen": [],
+    "Faecher_Katalog": [
+        {
+            "Name": "Mathe",
+            "JgstVon": 5,
+            "JgstBis": 13
+        },
+        {
+            "Name": "Deutsch",
+            "JgstVon": 5,
+            "JgstBis": 13
+        },
+        {
+            "Name": "Chemie",
+            "JgstVon": 8,
+            "JgstBis": 13
+        },
+        {
+            "Name": "Physik",
+            "JgstVon": 7,
+            "JgstBis": 13
+        },
+        {
+            "Name": "Sport",
+            "JgstVon": 5,
+            "JgstBis": 13
+        },
+        {
+            "Name": "Sp_M",
+            "JgstVon": 5,
+            "JgstBis": 13
+        },
+        {
+            "Name": "Sp_W",
+            "JgstVon": 5,
+            "JgstBis": 13
+        },
+        {
+            "Name": "Ev",
+            "JgstVon": 5,
+            "JgstBis": 13
+        },
+        {
+            "Name": "Kath",
+            "JgstVon": 5,
+            "JgstBis": 13
+        },
+        {
+            "Name": "Ethik",
+            "JgstVon": 5,
+            "JgstBis": 13
+        }
+    ],
+    "Raeume": [],
+    "Lehrer": [],
+    "Kopplungen": [],
+    "Struktur": {},
+    "Vertretungsplan": []
 }
