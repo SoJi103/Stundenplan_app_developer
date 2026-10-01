@@ -35,7 +35,7 @@ def speichere_daten(daten):
     with open(DATEI_PFAD, "w", encoding="utf-8") as f:
         json.dump(daten, f, ensure_ascii=False, indent=4)
         
-    # 2. Direkt automatisch zu GitHub synchronisieren
+    # 2. Direkt automatisch zu GitHub synchronisieren (für alle Geräte)
     try:
         token = st.secrets["GITHUB_TOKEN"]
         g = Github(token)
@@ -56,24 +56,20 @@ def speichere_daten(daten):
         st.warning(f"Lokal gespeichert, aber GitHub-Sync fehlgeschlagen: {e}")
 
 def lade_daten():
-    if os.path.exists(DATEI_PFAD):
-        with open(DATEI_PFAD, "r", encoding="utf-8") as f:
-            d = json.load(f)
-            if "Faecher_Katalog" not in d:
-                d["Faecher_Katalog"] = [
-                    {"Name": "Mathe", "JgstVon": 5, "JgstBis": 13},
-                    {"Name": "Deutsch", "JgstVon": 5, "JgstBis": 13},
-                    {"Name": "Chemie", "JgstVon": 8, "JgstBis": 13},
-                    {"Name": "Physik", "JgstVon": 7, "JgstBis": 13},
-                    {"Name": "Sport", "JgstVon": 5, "JgstBis": 13},
-                    {"Name": "Sp_M", "JgstVon": 5, "JgstBis": 13},
-                    {"Name": "Sp_W", "JgstVon": 5, "JgstBis": 13},
-                    {"Name": "Ev", "JgstVon": 5, "JgstBis": 13},
-                    {"Name": "Kath", "JgstVon": 5, "JgstBis": 13},
-                    {"Name": "Ethik", "JgstVon": 5, "JgstBis": 13},
-                ]
-            return d
-    return {
+    # Versuche zu Beginn, die Daten frisch von GitHub zu holen (Geräte-Synchronisation)
+    try:
+        token = st.secrets["GITHUB_TOKEN"]
+        g = Github(token)
+        repo = g.get_repo("SoJi103/Stundenplan_app_developer")
+        file = repo.get_contents("stundenplan_data.json", ref="main")
+        gh_data = json.loads(file.decoded_content.decode("utf-8"))
+        # Direkt lokal abspeichern als Fallback
+        with open(DATEI_PFAD, "w", encoding="utf-8") as f:
+            json.dump(gh_data, f, ensure_ascii=False, indent=4)
+    except Exception:
+        pass  # Falls GitHub nicht erreichbar ist, nimm die lokale Datei
+
+    standard_struktur = {
         "Klassen": [],
         "Faecher_Katalog": [
             {"Name": "Mathe", "JgstVon": 5, "JgstBis": 13},
@@ -81,13 +77,33 @@ def lade_daten():
             {"Name": "Chemie", "JgstVon": 8, "JgstBis": 13},
             {"Name": "Physik", "JgstVon": 7, "JgstBis": 13},
             {"Name": "Sport", "JgstVon": 5, "JgstBis": 13},
+            {"Name": "Sp_M", "JgstVon": 5, "JgstBis": 13},
+            {"Name": "Sp_W", "JgstVon": 5, "JgstBis": 13},
+            {"Name": "Ev", "JgstVon": 5, "JgstBis": 13},
+            {"Name": "Kath", "JgstVon": 5, "JgstBis": 13},
+            {"Name": "Ethik", "JgstVon": 5, "JgstBis": 13},
         ],
         "Raeume": [],
         "Lehrer": [],
         "Kopplungen": [],
         "Struktur": {},
         "Stundenplan": [],
+        "Vertretungsplan": []
     }
+
+    if os.path.exists(DATEI_PFAD):
+        try:
+            with open(DATEI_PFAD, "r", encoding="utf-8") as f:
+                d = json.load(f)
+                # Fehlende Schlüssel automatisch ergänzen, um KeyErrors zu verhindern
+                for key, val in standard_struktur.items():
+                    if key not in d:
+                        d[key] = val
+                return d
+        except Exception:
+            return standard_struktur
+            
+    return standard_struktur
 
 daten = lade_daten()
 TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"]
@@ -95,13 +111,14 @@ STUNDEN = list(range(1, 7))
 
 st.title("⚙️ Schul-Stundenplan Manager & Auto-Generator")
 
-tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📚 Fächer-Katalog",
     "🏫 Klassen & Räume",
     "👨‍🏫 Lehrer & Profile",
     "🎓 Fächer pro Klasse/Jgst",
     "🔀 Kopplungen & Schienen",
-    "🤖 Auto-Berechnung & Plan",
+    "🤖 Auto-Berechnung",
+    "🔄 Vertretungsplan",
 ])
 
 # Hilfsliste für alle verfügbaren Fächer
@@ -171,8 +188,6 @@ with tab1:
 
     st.markdown("---")
     st.subheader("2. Smarte Raumverwaltung")
-    st.caption("💡 **Tipp:** Gibst du z. B. `0.32` ein, erkennt das System automatisch **EG (Stockwerk 0)** und **Gang 3**. Für Texträume wie `Turnhalle` bleibt es flexibel.")
-
     col_r1, col_r2, col_r3 = st.columns(3)
     with col_r1:
         r_name = st.text_input("Raumnummer / Name (z.B. 0.32 oder Turnhalle):")
@@ -193,7 +208,7 @@ with tab1:
                 "Faecher": r_faecher_auswahl
             })
             speichere_daten(daten)
-            st.success(f"Raum {r_name} (Stockwerk {stock}, Gang {gang}) angelegt!")
+            st.success(f"Raum {r_name} angelegt!")
             st.rerun()
 
     if daten["Raeume"]:
@@ -201,32 +216,11 @@ with tab1:
         st.subheader("Vorhandene Räume")
         st.dataframe(pd.DataFrame(daten["Raeume"]))
         raum_loeschen = st.selectbox("Raum löschen:", [r["Name"] for r in daten["Raeume"]])
-        if st.button("🗑️ Raum löschen"):
+        if st.button("🗑️️ Raum löschen"):
             daten["Raeume"] = [r for r in daten["Raeume"] if r["Name"] != raum_loeschen]
             speichere_daten(daten)
             st.success(f"Raum {raum_loeschen} gelöscht!")
             st.rerun()
-
-    st.markdown("---")
-    st.subheader("Automatisierte Stammraum-Zuordnung")
-    if st.button("📐 Stammräume automatisch nach Stockwerk & Kapazität berechnen"):
-        stammraeume = {}
-        normale_raeume = [r for r in daten["Raeume"] if not r["Ist_Fachraum"]]
-        normale_raeume.sort(key=lambda x: (x["Stockwerk"], x["Gang"], x["Name"]))
-        
-        for kl in sorted(daten["Klassen"], key=lambda x: (x["Jahrgang"], x["Name"])):
-            passender_raum = None
-            for r in normale_raeume:
-                if r["Name"] not in stammraeume.values() and r["Kapazitaet"] >= kl["Schuelerzahl"]:
-                    passender_raum = r["Name"]
-                    break
-            if passender_raum:
-                stammraeume[kl["Name"]] = passender_raum
-        
-        daten["Stammraeume"] = stammraeume
-        speichere_daten(daten)
-        st.success("Stammräume erfolgreich zugewiesen!")
-        st.json(stammraeume)
 
 # ==========================================
 # TAB 2: LEHRERPROFILE & WÜNSCHE
@@ -239,14 +233,13 @@ with tab2:
         l_vname = st.text_input("Vor- & Nachname:")
         l_max = st.number_input("Max. Wochenstunden:", 1, 30, 24)
     with col_l2:
-        l_faecher_sel = st.multiselect("Fächer auswählen:", ALLE_FAECHER_NAMEN)
+        l_faecher_sel = st.multiselect("Fächer auswählen:", ALLE_FAECHER_NAMEN, key="l_faecher_multiselect")
         l_jgst_von = st.number_input("Unterrichtet Jgst von:", 5, 13, 5)
         l_jgst_bis = st.number_input("Unterrichtet Jgst bis:", 5, 13, 13)
     with col_l3:
         l_w_tage = st.multiselect("Wunschtage:", TAGE)
         l_s_tage = st.multiselect("Sperrtage (Fest):", TAGE)
         l_s_std = st.multiselect("Sperrstunden (Fest):", STUNDEN)
-        l_w_jgst = st.multiselect("Wunsch-Jahrgangsstufen:", list(range(5, 14)))
 
     if st.button("Lehrer speichern"):
         if l_kuerzel:
@@ -259,7 +252,6 @@ with tab2:
                 "Wunschtage": l_w_tage,
                 "Sperrtage": l_s_tage,
                 "Sperrstunden": l_s_std,
-                "WunschJgst": l_w_jgst,
                 "JgstVon": l_jgst_von,
                 "JgstBis": l_jgst_bis
             })
@@ -299,7 +291,7 @@ with tab3:
             f["Name"] for f in daten["Faecher_Katalog"]
             if f["JgstVon"] <= kl_jgst <= f["JgstBis"]
         ]
-        sel_fach = st.selectbox("Fach auswählen:", passende_faecher if passende_faecher else ALLE_FAECHER_NAMEN)
+        sel_fach = st.selectbox("Fach auswählen:", passende_faecher if passende_faecher else ALLE_FAECHER_NAMEN, key="fach_auswahl_tab3")
 
     with col_st3:
         sel_stunden = st.number_input("Wochenstunden:", 1, 10, 3)
@@ -321,7 +313,8 @@ with tab3:
     if ausgewaehlte_klasse in daten["Struktur"] and daten["Struktur"][ausgewaehlte_klasse]:
         fach_zu_loeschen = st.selectbox(
             f"Fach aus Klasse {ausgewaehlte_klasse} entfernen:", 
-            [e["Fach"] for e in daten["Struktur"][ausgewaehlte_klasse]]
+            [e["Fach"] for e in daten["Struktur"][ausgewaehlte_klasse]],
+            key="fach_loeschen_select"
         )
         if st.button("🗑️ Zuweisung löschen"):
             daten["Struktur"][ausgewaehlte_klasse] = [
@@ -335,18 +328,15 @@ with tab3:
 # TAB 4: KOPPLUNGEN & SCHIENEN
 # ==========================================
 with tab4:
-    st.subheader("Parallel-Kopplungen (z.B. Reli/Ethik, Fremdsprachen)")
-    kop_bezeichnung = st.text_input("Name der Kopplung (z.B. Religion/Ethik 11):")
+    st.subheader("Parallel-Kopplungen (z.B. Reli/Ethik)")
+    kop_bezeichnung = st.text_input("Name der Kopplung:")
     betroffene_klassen = st.multiselect("Über welche Klassen erstreckt sich die Kopplung?", alle_klassen_namen)
     
     col_kop1, col_kop2 = st.columns(2)
     with col_kop1:
         kop_fach = st.selectbox("Gekoppeltes Fach auswählen:", ALLE_FAECHER_NAMEN, key="kop_fach_sel")
     with col_kop2:
-        kop_gruppe = st.selectbox("Betroffene Schülergruppe:", [
-            "alle", "männlich", "weiblich", "ethik", "katholisch", "evangelisch", 
-            "englisch", "französisch", "spanisch", "latein"
-        ])
+        kop_gruppe = st.selectbox("Betroffene Schülergruppe:", ["alle", "ethik", "katholisch", "evangelisch"])
 
     if st.button("Kopplungsregel anlegen"):
         if kop_bezeichnung and betroffene_klassen:
@@ -360,15 +350,13 @@ with tab4:
             st.success("Kopplung erfolgreich angelegt!")
             st.rerun()
 
-    st.markdown("---")
-    st.subheader("Bestehende Kopplungen verwalten")
     if daten["Kopplungen"]:
         st.dataframe(pd.DataFrame(daten["Kopplungen"]))
-        kop_loeschen = st.selectbox("Kopplung löschen:", [k["Name"] for k in daten["Kopplungen"]])
+        kop_loeschen = st.selectbox("Kopplung löschen:", [k["Name"] for k in daten["Kopplungen"]], key="kop_del_sel")
         if st.button("🗑️ Kopplung löschen"):
             daten["Kopplungen"] = [k for k in daten["Kopplungen"] if k["Name"] != kop_loeschen]
             speichere_daten(daten)
-            st.success(f"Kopplung {kop_loeschen} gelöscht!")
+            st.success("Kopplung gelöscht!")
             st.rerun()
 
 # ==========================================
@@ -376,8 +364,6 @@ with tab4:
 # ==========================================
 with tab5:
     st.subheader("🤖 Automatische Stundenplan-Berechnung")
-    st.write("Der Solver berechnet unter Berücksichtigung aller Wünsche, Sperrzeiten, Fachräume und Lehrer-Kapazitäten einen neuen Stundenplan.")
-
     if st.button("🚀 Stundenplan jetzt automatisch berechnen"):
         neuer_plan = []
         stammraeume = daten.get("Stammraeume", {})
@@ -405,11 +391,9 @@ with tab5:
                 
                 lehrer = mögliche_lehrer[0]
                 
-                ist_fachraum = False
                 zugewiesener_raum = stammraum
                 for r in daten["Raeume"]:
                     if r["Ist_Fachraum"] and fach in r["Faecher"]:
-                        ist_fachraum = True
                         zugewiesener_raum = r["Name"]
                         break
 
@@ -434,8 +418,7 @@ with tab5:
                                 "Klasse": kl_name,
                                 "Fach": fach,
                                 "Lehrer": lehrer["Kuerzel"],
-                                "Raum": zugewiesener_raum,
-                                "Ist_Fachraum": ist_fachraum
+                                "Raum": zugewiesener_raum
                             })
                             platzierte_stunden += 1
                             if platzierte_stunden >= anzahl:
@@ -446,5 +429,86 @@ with tab5:
         if erfolg:
             daten["Stundenplan"] = neuer_plan
             speichere_daten(daten)
-            st.success("🎉 Stundenplan erfolgreich berechnet und direkt zu GitHub synchronisiert!")
+            st.success("🎉 Stundenplan erfolgreich berechnet und geräteübergreifend synchronisiert!")
             st.balloons()
+
+    if daten.get("Stundenplan"):
+        st.markdown("---")
+        st.subheader("Aktueller Master-Stundenplan")
+        st.dataframe(pd.DataFrame(daten["Stundenplan"]))
+
+# ==========================================
+# TAB 6: VERTRETUNGSPLAN (Zieht Daten aus Master)
+# ==========================================
+with tab6:
+    st.subheader("🔄 Vertretungsplan & Tagesänderungen")
+    st.write("Hier kannst du tagesaktuelle Ausfälle oder Vertretungen eintragen. Die Daten basieren auf dem echten Master-Stundenplan.")
+
+    master_plan = daten.get("Stundenplan", [])
+    if not master_plan:
+        st.warning("Es existiert noch kein berechneter Master-Stundenplan! Bitte erst im Tab 'Auto-Berechnung' einen Plan erstellen.")
+    else:
+        # Filteroptionen für den Vertretungsplan
+        col_v1, col_v2, col_v3 = st.columns(3)
+        with col_v1:
+            v_tag = st.selectbox("Tag der Änderung:", TAGE, key="v_tag")
+        with col_v2:
+            alle_geplanten_klassen = sorted(list(set(p["Klasse"] for p in master_plan)))
+            v_klasse = st.selectbox("Betroffene Klasse:", alle_geplanten_klassen, key="v_klasse")
+        with col_v3:
+            # Finde Stunden heraus, die diese Klasse an diesem Tag regulär hat
+            relevante_stunden = [p for p in master_plan if p["Tag"] == v_tag and p["Klasse"] == v_klasse]
+            v_stunde = st.selectbox("Betroffene Stunde:", sorted(list(set(p["Stunde"] for p in relevante_stunden))) if relevante_stunden else STUNDEN, key="v_stunde")
+
+        # Zeige reguläre Info für diese Stunde an
+        aktuelle_zuweisung = next((p for p in master_plan if p["Tag"] == v_tag and p["Klasse"] == v_klasse and p["Stunde"] == v_stunde), None)
+        
+        if aktuelle_zuweisung:
+            st.info(f"📅 **Regulär geplant:** {aktuelle_zuweisung['Fach']} bei **{aktuelle_zuweisung['Lehrer']}** in Raum {aktuelle_zuweisung['Raum']}")
+        else:
+            st.warning("⚠️ In dieser Stunde hat die Klasse laut Master-Plan regulär Unterricht frei.")
+
+        st.markdown("---")
+        v_typ = st.selectbox("Art der Änderung:", ["Entfall", "Vertretung", "Raumänderung"])
+        
+        ersatz_lehrer = ""
+        ersatz_raum = ""
+        if v_typ in ["Vertretung", "Raumänderung"]:
+            alle_lehrer_kuerzel = [l["Kuerzel"] for l in daten["Lehrer"]]
+            ersatz_lehrer = st.selectbox("Vertretungslehrer:", alle_lehrer_kuerzel) if v_typ == "Vertretung" else (aktuelle_zuweisung["Lehrer"] if aktuelle_zuweisung else "")
+            ersatz_raum = st.text_input("Neuer Raum (optional):", value=aktuelle_zuweisung["Raum"] if aktuelle_zuweisung else "")
+
+        if st.button("💾 Vertretung speichern"):
+            if "Vertretungsplan" not in daten:
+                daten["Vertretungsplan"] = []
+                
+            # Bestehende Änderung für diesen Slot überschreiben falls vorhanden
+            daten["Vertretungsplan"] = [
+                v for v in daten["Vertretungsplan"] 
+                if not (v["Tag"] == v_tag and v["Klasse"] == v_klasse and v["Stunde"] == v_stunde)
+            ]
+            
+            daten["Vertretungsplan"].append({
+                "Tag": v_tag,
+                "Klasse": v_klasse,
+                "Stunde": v_stunde,
+                "Typ": v_typ,
+                "Alt_Fach": aktuelle_zuweisung["Fach"] if aktuelle_zuweisung else "",
+                "Alt_Lehrer": aktuelle_zuweisung["Lehrer"] if aktuelle_zuweisung else "",
+                "Neuer_Lehrer": ersatz_lehrer,
+                "Neuer_Raum": ersatz_raum
+            })
+            speichere_daten(daten)
+            st.success("✅ Vertretungsänderung gespeichert & synchronisiert!")
+            st.rerun()
+
+        if daten.get("Vertretungsplan"):
+            st.markdown("### Aktive Vertretungen")
+            st.dataframe(pd.DataFrame(daten["Vertretungsplan"]))
+            
+            v_loeschen_idx = st.selectbox("Vertretung eintrag löschen (Index):", list(range(len(daten["Vertretungsplan"]))), key="v_del")
+            if st.button("🗑️ Ausgewählte Vertretung aufheben"):
+                daten["Vertretungsplan"].pop(v_loeschen_idx)
+                speichere_daten(daten)
+                st.success("Vertretung gelöscht!")
+                st.rerun()
