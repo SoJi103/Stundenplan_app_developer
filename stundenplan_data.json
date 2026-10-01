@@ -139,6 +139,12 @@
                 "Fach": "Deutsch",
                 "Stunden": 5
             }
+        ],
+        "10B": [
+            {
+                "Fach": "Mathe",
+                "Stunden": 5
+            }
         ]
     },
     "Vertretungsplan": []
