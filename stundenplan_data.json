@@ -5,7 +5,13 @@
         "11B": "R102",
         "11C": "R103"
     },
-    "Klassen": [],
+    "Klassen": [
+        {
+            "Name": "10A",
+            "Jahrgang": 10,
+            "Schuelerzahl": 26
+        }
+    ],
     "Faecher_Katalog": [
         {
             "Name": "Mathe",
