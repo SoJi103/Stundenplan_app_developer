@@ -1,216 +1,39 @@
 import datetime
+import json
 import pandas as pd
 import streamlit as st
 
 st.set_page_config(page_title="Schul-Vertretungsplan", layout="wide")
 
 # ==========================================
-# 1. DATENBASIS
+# 1. DATENBASIS (Live von GitHub / stundenplan_data.json)
 # ==========================================
 
-STAMMRÄUME = {"11A": "R101", "11B": "R102", "11C": "R103"}
 TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"]
 STUNDEN = list(range(1, 7))
 
-# Mini-Teststundenplan
-STUNDENPLAN = [
-    # Montag
-    {
-        "Tag": "Montag",
-        "Stunde": 1,
-        "Klasse": "11A",
-        "Fach": "Mathe",
-        "Lehrer": "SCH",
-        "Raum": "R101",
-        "Ist_Fachraum": False,
-    },
-    {
-        "Tag": "Montag",
-        "Stunde": 2,
-        "Klasse": "11A",
-        "Fach": "Deutsch",
-        "Lehrer": "SCH",
-        "Raum": "R101",
-        "Ist_Fachraum": False,
-    },
-    {
-        "Tag": "Montag",
-        "Stunde": 3,
-        "Klasse": "11B",
-        "Fach": "Physik",
-        "Lehrer": "MEY",
-        "Raum": "Ph-Saal",
-        "Ist_Fachraum": True,
-    },
-    {
-        "Tag": "Montag",
-        "Stunde": 4,
-        "Klasse": "11B",
-        "Fach": "Sport",
-        "Lehrer": "WEB",
-        "Raum": "Sporthalle",
-        "Ist_Fachraum": True,
-    },
-    # Dienstag
-    {
-        "Tag": "Dienstag",
-        "Stunde": 1,
-        "Klasse": "11A",
-        "Fach": "Mathe",
-        "Lehrer": "SCH",
-        "Raum": "R101",
-        "Ist_Fachraum": False,
-    },
-    {
-        "Tag": "Dienstag",
-        "Stunde": 2,
-        "Klasse": "11B",
-        "Fach": "Sport",
-        "Lehrer": "WEB",
-        "Raum": "Sporthalle",
-        "Ist_Fachraum": True,
-    },
-    {
-        "Tag": "Dienstag",
-        "Stunde": 2,
-        "Klasse": "11A",
-        "Fach": "Physik",
-        "Lehrer": "MEY",
-        "Raum": "Ph-Saal",
-        "Ist_Fachraum": True,
-    },
-    {
-        "Tag": "Dienstag",
-        "Stunde": 3,
-        "Klasse": "11A",
-        "Fach": "Chemie",
-        "Lehrer": "FIS",
-        "Raum": "Ch-Saal",
-        "Ist_Fachraum": True,
-    },
-    {
-        "Tag": "Dienstag",
-        "Stunde": 3,
-        "Klasse": "11B",
-        "Fach": "Deutsch",
-        "Lehrer": "SCH",
-        "Raum": "R102",
-        "Ist_Fachraum": False,
-    },
-    {
-        "Tag": "Dienstag",
-        "Stunde": 4,
-        "Klasse": "11A",
-        "Fach": "Chemie",
-        "Lehrer": "FIS",
-        "Raum": "Ch-Saal",
-        "Ist_Fachraum": True,
-    },
-    {
-        "Tag": "Dienstag",
-        "Stunde": 5,
-        "Klasse": "11B",
-        "Fach": "Chemie",
-        "Lehrer": "FIS",
-        "Raum": "Ch-Saal",
-        "Ist_Fachraum": True,
-    },
-    {
-        "Tag": "Dienstag",
-        "Stunde": 6,
-        "Klasse": "11A",
-        "Fach": "Chemie",
-        "Lehrer": "FIS",
-        "Raum": "Ch-Saal",
-        "Ist_Fachraum": True,
-    },
-    # Mittwoch
-    {
-        "Tag": "Mittwoch",
-        "Stunde": 1,
-        "Klasse": "11B",
-        "Fach": "Physik",
-        "Lehrer": "MEY",
-        "Raum": "Ph-Saal",
-        "Ist_Fachraum": True,
-    },
-    {
-        "Tag": "Mittwoch",
-        "Stunde": 2,
-        "Klasse": "11A",
-        "Fach": "Sport",
-        "Lehrer": "WEB",
-        "Raum": "Sporthalle",
-        "Ist_Fachraum": True,
-    },
-    {
-        "Tag": "Mittwoch",
-        "Stunde": 3,
-        "Klasse": "11B",
-        "Fach": "Mathe",
-        "Lehrer": "SCH",
-        "Raum": "R102",
-        "Ist_Fachraum": False,
-    },
-    {
-        "Tag": "Mittwoch",
-        "Stunde": 4,
-        "Klasse": "11A",
-        "Fach": "Physik",
-        "Lehrer": "MEY",
-        "Raum": "Ph-Saal",
-        "Ist_Fachraum": True,
-    },
-    # Donnerstag
-    {
-        "Tag": "Donnerstag",
-        "Stunde": 1,
-        "Klasse": "11A",
-        "Fach": "Deutsch",
-        "Lehrer": "SCH",
-        "Raum": "R101",
-        "Ist_Fachraum": False,
-    },
-    {
-        "Tag": "Donnerstag",
-        "Stunde": 2,
-        "Klasse": "11A",
-        "Fach": "Deutsch",
-        "Lehrer": "SCH",
-        "Raum": "R101",
-        "Ist_Fachraum": False,
-    },
-    {
-        "Tag": "Donnerstag",
-        "Stunde": 3,
-        "Klasse": "11B",
-        "Fach": "Chemie",
-        "Lehrer": "FIS",
-        "Raum": "Ch-Saal",
-        "Ist_Fachraum": True,
-    },
-    # Freitag
-    {
-        "Tag": "Freitag",
-        "Stunde": 1,
-        "Klasse": "11A",
-        "Fach": "Physik",
-        "Lehrer": "MEY",
-        "Raum": "Ph-Saal",
-        "Ist_Fachraum": True,
-    },
-    {
-        "Tag": "Freitag",
-        "Stunde": 2,
-        "Klasse": "11B",
-        "Fach": "Sport",
-        "Lehrer": "WEB",
-        "Raum": "Sporthalle",
-        "Ist_Fachraum": True,
-    },
-]
 
-ALLE_LEHRER = sorted(list(set(e["Lehrer"] for e in STUNDENPLAN)))
+# Funktion zum Laden aller Daten (Stundenplan & Stammräume) aus der GitHub-JSON
+def lade_daten():
+    try:
+        with open("stundenplan_data.json", "r", encoding="utf-8") as f:
+            inhalt = json.load(f)
+            # Holt den Stundenplan und die Stammräume (falls im Editor definiert, sonst Fallback)
+            plan = inhalt.get("Stundenplan", [])
+            raeume = inhalt.get(
+                "Stammraeume", {"11A": "R101", "11B": "R102", "11C": "R103"}
+            )
+            return plan, raeume
+    except Exception as e:
+        st.error(f"Fehler beim Laden der stundenplan_data.json: {e}")
+        return [], {"11A": "R101", "11B": "R102", "11C": "R103"}
+
+
+# Daten live laden
+STUNDENPLAN, STAMMRÄUME = lade_daten()
+
+ALLE_LEHRER = sorted(list(set(e["Lehrer"] for e in STUNDENPLAN if "Lehrer" in e)))
+
 
 # ==========================================
 # 2. SEITENLEISTE
